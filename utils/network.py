@@ -13,7 +13,7 @@ __author__ = [ "Amittai Siavava" ]
 import numpy as np
 import matplotlib.pyplot as plt
 
-from utils import Sigmoid, Tanh, ReLU, Softmax
+from utils import Sigmoid, Tanh, ReLU, Softmax, Linear, CE, MSE, MAE
 
 class DenseLayer:
   def __init__(self, neurons: int, activation: str):
@@ -36,6 +36,9 @@ class DenseLayer:
         
       case "softmax":
         self.activation = Softmax()
+        
+      case "linear":
+        self.activation = Linear()
         
       case _:
         raise ValueError(f"Unknown activation function: {activation}")
@@ -95,6 +98,7 @@ class ConvNet:
   
   def __init__(self):
     self.layers = []
+    self.epochs = 0
     
   def add(self, layer):
     """
@@ -120,6 +124,7 @@ class ConvNet:
       # print(f"before: {output.shape}")
       # print(f"{layer = }")
       output = layer.forward(output, is_train)
+      # print(f"{output[:5] = }")
       # print(f"after: {output.shape}")
       
     # print(output.shape)
@@ -146,14 +151,38 @@ class ConvNet:
     """
     return "\n".join([str(layer) for layer in self.layers])
   
-  def train(self, X, y, epochs, learning_rate):
+  def get_random_batch(self, X, y, batch_size):
+    """
+      Get a random batch from the dataset
+    """
+    idx = np.random.randint(len(X), size=batch_size)
+    return X[idx], y[idx]
+  
+  def train(self, dataset, epochs, learning_rate, batch_size=128):
     """
       Train the network
     """
-    for epoch in range(epochs):
-      error = 0
-      for X_batch, y_batch in zip(X, y):
-        output = self.forward(X_batch, is_train=True)
-        error += np.square(output - y_batch).sum()
-        self.backward(output - y_batch, learning_rate)
-      print(f"Epoch {epoch}: Error {error/len(X)}")
+    
+    X = dataset["train"]["images"]
+    y = dataset["train"]["labels"]
+    
+    # each epoch trains on a random sequence of 1000 datapoints
+    for epoch in range(self.epochs, self.epochs + epochs):
+      loss = 0
+      # pick random sample from dataset
+      X_batch, y_batch = self.get_random_batch(X, y, batch_size)
+      
+      for x, y_true in zip(X_batch, y_batch):
+        # forward propagation
+        y_pred = self.forward(x, is_train=True)
+        
+        # calculate loss (cross-Entropy)
+        loss += CE(y_true, y_pred)
+        
+        # backward propagation
+        self.backward(y_pred - y_true, learning_rate)
+        
+      if epoch % 100 == 0:
+        print(f"Epoch {epoch:5d} of {self.epochs + epochs:5d}: {loss/len(X_batch)}")
+        
+    self.epochs += epochs

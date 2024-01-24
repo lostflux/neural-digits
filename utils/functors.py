@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-__author__ = [ "Amittai Siavava" ]
-__credits__ = [ "Amittai Siavava" ]
+"""
+Activation functions
+"""
 
 import numpy as np
 
@@ -19,6 +20,37 @@ class Module:
   
   def __call__(self, *args, **kwargs):
     return self.forward(*args, **kwargs)
+  
+class Linear(Module):
+  """
+    Linear Activation function
+  """
+  
+  def __init__(self):
+    self.out = None
+    self.name = "linear"
+    
+  @nan_to_zero
+  def forward(self, x, is_train=False):
+    """
+      Forward Propagation
+    """
+    if is_train:
+      self.out = x
+      
+    return x
+
+  @nan_to_zero
+  def backward(self, error):
+    """
+      Backward Propagation
+    """
+    if self.out is None:
+      raise ValueError("No forward propagation found")
+    
+    derivative = np.ones_like(self.out)
+    
+    return error * derivative
 
 class Sigmoid(Module):
   """
@@ -28,7 +60,6 @@ class Sigmoid(Module):
   def __init__(self):
     self.out = None
     self.name = "sigmoid"
-    self.learning_rate = 0.1
     
   @nan_to_zero
   def forward(self, x, is_train=False):
@@ -47,16 +78,13 @@ class Sigmoid(Module):
     """
       Backward Propagation
     """
-    # if self.out is None:
-    #   raise ValueError("No forward propagation found")
-    # return dx * self.out * (1 - self.out)
     if self.out is None:
       raise ValueError("No forward propagation found")
     
     derivative = self.out * (1 - self.out)
     
     
-    return error * derivative * learning_rate
+    return error * derivative
     
 
 class Tanh(Module):
@@ -67,7 +95,6 @@ class Tanh(Module):
   def __init__(self):
     self.out = None
     self.name = "tanh"
-    self.learning_rate = 0.1
     
   @nan_to_zero
   def forward(self, x, is_train=False):
@@ -91,7 +118,7 @@ class Tanh(Module):
 
     derivative = 1 - np.power(self.out, 2)
     
-    return error * derivative * self.learning_rate
+    return error * derivative
 
 class ReLU(Module):
   """
@@ -101,7 +128,6 @@ class ReLU(Module):
   def __init__(self):
     self.out = None
     self.name = "relu"
-    self.learning_rate = 0.1
     
   @nan_to_zero
   def forward(self, x, is_train=False):
@@ -125,7 +151,7 @@ class ReLU(Module):
 
     derivative = np.where(self.out <= 0, 0, 1)
     
-    return error * derivative * self.learning_rate
+    return error * derivative
 
 
 class Softmax(Module):
@@ -136,7 +162,6 @@ class Softmax(Module):
   def __init__(self):
     self.out = None
     self.name = "softmax"
-    self.learning_rate = 0.1
     
   @nan_to_zero
   def forward(self, x, is_train=False):
@@ -161,4 +186,4 @@ class Softmax(Module):
 
     derivative = self.out * (1 - self.out)
     
-    return error * derivative * self.learning_rate
+    return error * derivative
